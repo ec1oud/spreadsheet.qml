@@ -30,6 +30,7 @@ import QtQuick.Layouts 1.13
 import QtQuick.Window 2.13
 import Qt.labs.qmlmodels 1.0
 import QtQml.Models 2.13
+import Qt.labs.platform 1.0 as Platform
 
 ApplicationWindow {
     id: window
@@ -47,7 +48,7 @@ ApplicationWindow {
         z: 1
         Repeater {
             id: headerRepeater
-            model: table.model.columnCount()
+            model: table.model.width
             Rectangle {
                 color: "#88A"
                 width: splitter.x + 6; height: 20
@@ -80,7 +81,7 @@ ApplicationWindow {
         // TableView ought to provide height of each row somehow, in case there is no rowHeightProvider function
         property real rowHeight: (table.contentHeight - table.rowSpacing * table.model.rowCount() + 2) / table.model.rowCount()
         Repeater {
-            model: table.model.rowCount()
+            model: table.model.height
             Rectangle {
                 color: "#88A"
                 width: rowLabels.width; height: rowLabels.rowHeight
@@ -111,6 +112,7 @@ ApplicationWindow {
 
         model: TableModel {
             id: tableModel
+            /*
             rows: [
                 [
                     // Each object (line) is one cell/column,
@@ -179,6 +181,7 @@ ApplicationWindow {
                     { formula: "* C7 E7" }
                 ],
             ]
+            */
         }
 
         selectionModel: ItemSelectionModel {
@@ -240,11 +243,17 @@ ApplicationWindow {
         }
     }
 
+    Platform.FileDialog {
+        id: fileDialog
+        nameFilters: ["CSV files (*.csv)"]
+        onAccepted: load(file)
+    }
+
     menuBar: MenuBar {
         Menu {
             title: qsTr("&File")
             Action { text: qsTr("&New...") }
-            Action { text: qsTr("&Open...") }
+            Action { text: qsTr("&Open..."); shortcut: StandardKey.Open; onTriggered: fileDialog.open() }
             Action { text: qsTr("&Save") }
             Action { text: qsTr("Save &As...") }
             MenuSeparator { }
@@ -260,5 +269,47 @@ ApplicationWindow {
             title: qsTr("&Help")
             Action { text: qsTr("&About") }
         }
+    }
+
+    function load(file) {
+        var parser = null;
+        if (file.toString().endsWith(".csv"))
+            parser = parseCSV
+        if (parser) {
+            tableModel.clear()
+            var request = new XMLHttpRequest()
+            request.open('GET', file)
+            request.onreadystatechange = function(event) {
+                if (request.readyState === XMLHttpRequest.DONE)
+                    tableModel.rows = parser(request.responseText)
+            }
+            request.send()
+        }
+    }
+
+    function parseCSV(strData) {
+        var strDelimiter = ",";
+        var objPattern = new RegExp( (
+                // Delimiters.
+                "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+                // Quoted fields.
+                "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+                // Standard fields.
+                "([^\"\\" + strDelimiter + "\\r\\n]*))"
+            ), "gi" );
+        var arrData = [[]];
+        var arrMatches = null;
+        while (arrMatches = objPattern.exec( strData )){
+            var strMatchedDelimiter = arrMatches[ 1 ];
+            if (strMatchedDelimiter.length && strMatchedDelimiter !== strDelimiter)
+                arrData.push( [] );
+            var strMatchedValue;
+            if (arrMatches[ 2 ])
+                strMatchedValue = arrMatches[ 2 ].replace(new RegExp( "\"\"", "g" ), "\"");
+            else
+                strMatchedValue = arrMatches[ 3 ];
+            arrData[ arrData.length - 1 ].push( {"display": strMatchedValue} );
+        }
+        return( arrData );
     }
 }
