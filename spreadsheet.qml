@@ -46,14 +46,25 @@ ApplicationWindow {
         x: table.originX - table.contentX + rowLabels.width + table.columnSpacing
         z: 1
         Repeater {
+            id: headerRepeater
             model: table.model.columnCount()
             Rectangle {
                 color: "#88A"
-                width: 100; height: 20
+                width: splitter.x + 6; height: 20
 
                 Text {
                     anchors.centerIn: parent
                     text: String.fromCharCode(65 + index)
+                }
+                Item {
+                    id: splitter
+                    x: 94
+                    width: 12
+                    height: parent.height + 10
+                    DragHandler {
+                        yAxis.enabled: false
+                        onActiveChanged: if (!active) table.forceLayout()
+                    }
                 }
             }
         }
@@ -95,6 +106,8 @@ ApplicationWindow {
         Layout.minimumHeight: window.height / 2
         Layout.fillWidth: true
         Layout.fillHeight: true
+
+        columnWidthProvider: function(column) { return headerRepeater.itemAt(column).width }
 
         model: TableModel {
             id: tableModel
