@@ -141,8 +141,17 @@ ApplicationWindow {
             Text {
                 x: 2; y: (parent.height - height) / 2
                 id: stringText
-//                text: model.formula !== undefined ? "formula" : model.display // TODO calculate the formula
-                text: model.display
+                function v(c, r) {
+                    if (r === undefined)
+                        r = row
+                    return table.model.data(table.model.index(r, c)) // so we need index() and data() invokable
+                    // return table.model.get(r)[c] // works only for plain-valued cells, not object-valued cells
+                }
+                Component.onCompleted: {
+                    if (model.formula !== undefined)
+                        console.log(model.formula + " => " + eval(model.formula))
+                }
+                text: model.formula !== undefined ? eval(model.formula) : model.display
                 width: parent.width - 4
                 elide: Text.ElideRight
                 font.preferShaping: false
@@ -280,5 +289,10 @@ ApplicationWindow {
         if (arrData[arrData.length-1].map(x => x == ""))
             arrData.pop();
         return( arrData );
+    }
+
+    Component.onCompleted: {
+        if (Qt.application.arguments.length > 2)
+            load(Qt.application.arguments[2])
     }
 }
