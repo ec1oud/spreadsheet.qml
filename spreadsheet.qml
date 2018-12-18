@@ -56,7 +56,8 @@ ApplicationWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    text: String.fromCharCode(65 + index)
+                    property var label: table.model.header[index]
+                    text: label !== undefined ? label + " (" + String.fromCharCode(65 + index) + ")" : String.fromCharCode(65 + index)
                 }
                 Item {
                     id: splitter
@@ -112,6 +113,7 @@ ApplicationWindow {
         columnWidthProvider: function(column) { return headerRepeater.itemAt(column).width }
 
         model: TableModel {
+            /*
             // Some demo data
             // In real life we don't hard-code this in QML, but rather load a file of some sort.
             rows: [
@@ -183,6 +185,7 @@ ApplicationWindow {
                     { formula: "* C7 E7" }
                 ],
             ]
+            */
         }
 
         selectionModel: ItemSelectionModel {
@@ -289,13 +292,14 @@ ApplicationWindow {
         if (file.toString().endsWith(".csv"))
             parser = parseCSV
         if (parser) {
-//            table.model.clear() // TODO doesn't do enough; for now, we have to start over
             var request = new XMLHttpRequest()
             request.open('GET', file)
             request.onreadystatechange = function(event) {
-                if (request.readyState === XMLHttpRequest.DONE)
-                    table.model = tableModelFactory.createObject(table, {"rows": parser(request.responseText)})
-//                    table.model.rows = parser(request.responseText) // If clear() was more complete, we could do this
+                if (request.readyState === XMLHttpRequest.DONE) {
+                    var data = parser(request.responseText)
+                    var header = data.shift()
+                    table.model = tableModelFactory.createObject(table, {"rows": data, "header": header})
+                }
             }
             request.send()
         }
@@ -334,12 +338,14 @@ ApplicationWindow {
                 strMatchedValue = arrMatches[ 2 ].replace(new RegExp( "\"\"", "g" ), "\"");
             else
                 strMatchedValue = arrMatches[ 3 ];
-//            arrData[ arrData.length - 1 ].push( {"display": strMatchedValue} );
             // The naive way: make a simple columnar table with no custom roles.
             arrData[ arrData.length - 1 ].push( strMatchedValue );
             // It would alternatively be possible to define roles based on column headings,
             // but TableView does not need it to be done that way (whereas ListView does).
         }
+        // remove final row if it's all empty
+        if (arrData[arrData.length-1].map(x => x == ""))
+            arrData.pop();
         return( arrData );
     }
 }
