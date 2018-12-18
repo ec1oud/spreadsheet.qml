@@ -1,0 +1,109 @@
+[
+    [
+        "Description",
+        "Date",
+        "Amount",
+        "Currency",
+        "Exchange Rate",
+        "Total in NOK"
+    ],
+    [
+        "Flytoget",
+        {
+            "date": "2018/11/05"
+        },
+        {
+            "display": 190,
+            "format": "currency"
+        },
+        "NOK",
+        1,
+        {
+            "formula": "* C0 E0"
+        }
+    ],
+    [
+        "Flight (Berlin)",
+        {
+            "date": "2018/11/05"
+        },
+        2350,
+        "NOK",
+        1,
+        {
+            "formula": "* C1 E1"
+        }
+    ],
+    [
+        "Lunch",
+        {
+            "date": "2018/11/05"
+        },
+        14,
+        "EUR",
+        9.79,
+        {
+            "formula": "* C2 E2"
+        }
+    ],
+    [
+        "Taxi",
+        {
+            "date": "2018/11/05"
+        },
+        30,
+        "EUR",
+        9.79,
+        {
+            "formula": "* C3 E3"
+        }
+    ],
+    [
+        "Hotel",
+        {
+            "date": "2018/11/05"
+        },
+        1500,
+        "EUR",
+        9.79,
+        {
+            "formula": "* C4 E4"
+        }
+    ],
+    [
+        "Flight (Boston)",
+        {
+            "date": "2018/11/12"
+        },
+        800,
+        "EUR",
+        1,
+        {
+            "formula": "* C5 E5"
+        }
+    ],
+    [
+        "Hotel",
+        {
+            "date": "2018/11/12"
+        },
+        500,
+        "USD",
+        8,
+        {
+            "formula": "* C6 E6"
+        }
+    ],
+    [
+        "Flight (Oslo)",
+        {
+            "date": "2018/11/15"
+        },
+        1700,
+        "NOK",
+        1,
+        {
+            "formula": "* C7 E7"
+        }
+    ]
+]
