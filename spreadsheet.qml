@@ -99,6 +99,26 @@ ApplicationWindow {
         }
     }
 
+    function evaluateFormula(f, row) {
+        function v(c, r) {
+            if (r === undefined)
+                r = row
+            return table.model.data(table.model.index(r, c))
+        }
+        var pat = /([A-Z]+)([0-9]+)/g
+        var match = null;
+        var fRewrite = f;
+        while (match = pat.exec(f)) {
+            var fc = match[ 1 ].charCodeAt(0) - 65;
+            var fr = match[ 2 ];
+            fRewrite = fRewrite.replace(match[0], table.model.data(table.model.index(fr, fc)))
+//            print(pat.lastIndex, f, fc, fr, JSON.stringify(match), fRewrite)
+        }
+
+        print(row, f, fRewrite, eval(fRewrite))
+        return eval(fRewrite)
+    }
+
     TableView {
         id: table
         anchors.fill: parent
@@ -141,17 +161,7 @@ ApplicationWindow {
             Text {
                 x: 2; y: (parent.height - height) / 2
                 id: stringText
-                function v(c, r) {
-                    if (r === undefined)
-                        r = row
-                    return table.model.data(table.model.index(r, c)) // so we need index() and data() invokable
-                    // return table.model.get(r)[c] // works only for plain-valued cells, not object-valued cells
-                }
-                Component.onCompleted: {
-                    if (model.formula !== undefined)
-                        console.log(model.formula + " => " + eval(model.formula))
-                }
-                text: model.formula !== undefined ? eval(model.formula) : model.display
+                text: model.formula !== undefined ? evaluateFormula(model.formula, row) : model.display
                 width: parent.width - 4
                 elide: Text.ElideRight
                 font.preferShaping: false
