@@ -1,3 +1,4 @@
+#!/usr/bin/env -S qml -apptype widget
 /*
   Copyright (c) 2018 Shawn Rutledge <s@ecloud.org>
   All rights reserved.
@@ -30,7 +31,7 @@ import QtQuick.Layouts 1.13
 import QtQuick.Window 2.13
 import Qt.labs.qmlmodels 1.0
 import QtQml.Models 2.13
-import Qt.labs.platform 1.0 as Platform
+import Qt.labs.platform 1.0 as Platform // requires -apptype widget
 
 ApplicationWindow {
     id: window
@@ -111,91 +112,87 @@ ApplicationWindow {
         columnWidthProvider: function(column) { return headerRepeater.itemAt(column).width }
 
         model: TableModel {
-            id: tableModel
-            /*
+            // Some demo data
+            // In real life we don't hard-code this in QML, but rather load a file of some sort.
             rows: [
                 [
                     // Each object (line) is one cell/column,
                     // and each property in that object is a role.
-                    { text: "Flytoget" },
+                    // Alternatively, there can be simply a value (for DisplayRole) in some cells.
+                    "Flytoget",
                     { date: "2018/11/05" },
-                    { currency: 190 },
-                    { text: "NOK" },
-                    { number: 1 },
+                    { display: 190, format: "currency" },
+                    "NOK",
+                    1,
                     { formula: "* C0 E0" }
                 ],
                 [
-                    { text: "Flight (Berlin)" },
+                    "Flight (Berlin)",
                     { date: "2018/11/05" },
                     { currency: 2350 },
-                    { text: "NOK" },
-                    { number: 1 },
+                    "NOK",
+                    1,
                     { formula: "* C1 E1" }
                 ],
                 [
-                    { text: "Lunch" },
+                    "Lunch",
                     { date: "2018/11/05" },
                     { currency: 14 },
-                    { text: "EUR" },
-                    { number: 9.79 },
+                    "EUR",
+                    9.79,
                     { formula: "* C2 E2" }
                 ],
                 [
-                    { text: "Taxi" },
+                    "Taxi",
                     { date: "2018/11/05" },
                     { currency: 30 },
-                    { text: "EUR" },
-                    { number: 9.79 },
+                    "EUR",
+                    9.79,
                     { formula: "* C3 E3" }
                 ],
                 [
-                    { text: "Hotel" },
+                    "Hotel",
                     { date: "2018/11/05" },
                     { currency: 1500 },
-                    { text: "EUR" },
-                    { number: 9.79 },
+                    "EUR",
+                    9.79,
                     { formula: "* C4 E4" }
                 ],
                 [
-                    { text: "Flight (Boston)" },
+                    "Flight (Boston)",
                     { date: "2018/11/12" },
                     { currency: 800 },
-                    { text: "EUR" },
-                    { number: 1 },
+                    "EUR",
+                    1,
                     { formula: "* C5 E5" }
                 ],
                 [
-                    { text: "Hotel" },
+                    "Hotel",
                     { date: "2018/11/12" },
                     { currency: 500 },
-                    { text: "USD" },
-                    { number: 8 },
+                    "USD",
+                    8,
                     { formula: "* C6 E6" }
                 ],
                 [
-                    { text: "Flight (Oslo)" },
+                    "Flight (Oslo)",
                     { date: "2018/11/15" },
                     { currency: 1700 },
-                    { text: "NOK" },
-                    { number: 1 },
+                    "NOK",
+                    1,
                     { formula: "* C7 E7" }
                 ],
             ]
-            */
         }
 
         selectionModel: ItemSelectionModel {
-            model: tableModel
-//            onSelectionChanged: {
-//                console.log("selected " + selected)
-//                console.log("deselected " + deselected)
-//            }
+            model: table.model
         }
 
         delegate: Rectangle {
             id: delegate
             // TableView ought to provide this via the index property already, instead of an int
-            property var modelIndex: tableModel.index(row, column)
+            property var modelIndex: table.model.index(row, column)
             // TableView ought to provide a magic property (like column, row and index) called "selected", if a selectionModel is bound
 //            color: selected ? "lightsteelblue" : "#EEE"
             color: table.selectionModel.isSelected(modelIndex) ? "lightsteelblue" : "#EEE" // doesn't update without patching
@@ -212,7 +209,8 @@ ApplicationWindow {
             Text {
                 x: 2; y: (parent.height - height) / 2
                 id: stringText
-                text: model.formula !== undefined ? "formula" : model.display // TODO calculate the formula
+//                text: model.formula !== undefined ? "formula" : model.display // TODO calculate the formula
+                text: model.display
                 width: parent.width - 4
                 elide: Text.ElideRight
                 font.preferShaping: false
@@ -236,7 +234,7 @@ ApplicationWindow {
                         // clicking again after it's already selected goes into edit mode
                         delegate.state = "editing"
                     } else {
-                        table.selectionModel.select(tableModel.index(row, column), ItemSelectionModel.ClearAndSelect)
+                        table.selectionModel.select(table.model.index(row, column), ItemSelectionModel.ClearAndSelect)
                     }
                 }
             }
@@ -244,31 +242,46 @@ ApplicationWindow {
     }
 
     Platform.FileDialog {
-        id: fileDialog
+        id: loadDialog
         nameFilters: ["CSV files (*.csv)"]
         onAccepted: load(file)
+    }
+
+    Platform.FileDialog {
+        id: saveDialog
+        fileMode: Platform.FileDialog.SaveFile
+        nameFilters: ["CSV files (*.csv)", "JSON files (*.json)", "MD files (*.md *.mkd)"]
+        onAccepted: save(file)
+    }
+
+    TableSerializer {
+        id: tableSerializer
+    }
+
+    Component {
+        id: tableModelFactory
+        TableModel { }
     }
 
     menuBar: MenuBar {
         Menu {
             title: qsTr("&File")
-            Action { text: qsTr("&New...") }
-            Action { text: qsTr("&Open..."); shortcut: StandardKey.Open; onTriggered: fileDialog.open() }
-            Action { text: qsTr("&Save") }
-            Action { text: qsTr("Save &As...") }
+            Action { text: qsTr("&New..."); shortcut: StandardKey.New; onTriggered: table.model.clear() }
+            Action { text: qsTr("&Open..."); shortcut: StandardKey.Open; onTriggered: loadDialog.open() }
+            Action { text: qsTr("Save &As..."); shortcut: StandardKey.Save; onTriggered: saveDialog.open() }
             MenuSeparator { }
-            Action { text: qsTr("&Quit") }
+            Action { text: qsTr("&Quit"); shortcut: StandardKey.Quit; onTriggered: Qt.quit() }
         }
-        Menu {
-            title: qsTr("&Edit")
-            Action { text: qsTr("Cu&t") }
-            Action { text: qsTr("&Copy") }
-            Action { text: qsTr("&Paste") }
-        }
-        Menu {
-            title: qsTr("&Help")
-            Action { text: qsTr("&About") }
-        }
+//        Menu {
+//            title: qsTr("&Edit")
+//            Action { text: qsTr("Cu&t") }
+//            Action { text: qsTr("&Copy") }
+//            Action { text: qsTr("&Paste") }
+//        }
+//        Menu {
+//            title: qsTr("&Help")
+//            Action { text: qsTr("&About") }
+//        }
     }
 
     function load(file) {
@@ -276,15 +289,28 @@ ApplicationWindow {
         if (file.toString().endsWith(".csv"))
             parser = parseCSV
         if (parser) {
-            tableModel.clear()
+//            table.model.clear() // TODO doesn't do enough; for now, we have to start over
             var request = new XMLHttpRequest()
             request.open('GET', file)
             request.onreadystatechange = function(event) {
                 if (request.readyState === XMLHttpRequest.DONE)
-                    tableModel.rows = parser(request.responseText)
+                    table.model = tableModelFactory.createObject(table, {"rows": parser(request.responseText)})
+//                    table.model.rows = parser(request.responseText) // If clear() was more complete, we could do this
             }
             request.send()
         }
+    }
+
+    function save(file) {
+        var filename = file.toString()
+        if (filename.endsWith(".csv"))
+            tableSerializer.saveCsv(table.model, file);
+        else if (filename.endsWith(".json"))
+            tableSerializer.saveJson(table.model, file);
+            //tableSerializer.saveJson(table.model, file, TableSerializer.DisplayStringArrays);
+            //tableSerializer.saveJson(table.model, file, TableSerializer.ObjectArrays);
+        else if (filename.endsWith(".md") || filename.endsWith(".mkd"))
+            tableSerializer.saveMarkdown(table.model, file, TextEdit.MarkdownDialectGitHub);
     }
 
     function parseCSV(strData) {
@@ -308,7 +334,11 @@ ApplicationWindow {
                 strMatchedValue = arrMatches[ 2 ].replace(new RegExp( "\"\"", "g" ), "\"");
             else
                 strMatchedValue = arrMatches[ 3 ];
-            arrData[ arrData.length - 1 ].push( {"display": strMatchedValue} );
+//            arrData[ arrData.length - 1 ].push( {"display": strMatchedValue} );
+            // The naive way: make a simple columnar table with no custom roles.
+            arrData[ arrData.length - 1 ].push( strMatchedValue );
+            // It would alternatively be possible to define roles based on column headings,
+            // but TableView does not need it to be done that way (whereas ListView does).
         }
         return( arrData );
     }
