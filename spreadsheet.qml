@@ -246,7 +246,7 @@ ApplicationWindow {
 
     Platform.FileDialog {
         id: loadDialog
-        nameFilters: ["CSV files (*.csv)"]
+        nameFilters: ["CSV files (*.csv)", "MD files (*.md *.mkd)"]
         onAccepted: load(file)
     }
 
@@ -291,6 +291,8 @@ ApplicationWindow {
         var parser = null;
         if (file.toString().endsWith(".csv"))
             parser = parseCSV
+        else if (file.toString().endsWith(".md") || file.toString().endsWith(".mkd"))
+            parser = tableSerializer.parseMarkdown
         if (parser) {
             var request = new XMLHttpRequest()
             request.open('GET', file)
