@@ -1,4 +1,4 @@
-#!/usr/bin/env -S qml -apptype widget
+#!/bin/env -S qml -apptype widget
 /*
   Copyright (c) 2018 Shawn Rutledge <s@ecloud.org>
   All rights reserved.
@@ -140,7 +140,7 @@ ApplicationWindow {
                 fRewrite = fRewrite.replace(match[1], "v(" + fc + ", " + fr + ")")
                 // evaluateFormula(table.model.data(table.model.index(fr, fc)), row))
                 start = match[0]
-                //                print(start, f, fc, fr, JSON.stringify(match), fRewrite)
+//                print(start, f, fc, fr, JSON.stringify(match), fRewrite)
             }
             return fRewrite
         }
@@ -201,10 +201,14 @@ ApplicationWindow {
             onColorChanged: if (!table.selectionModel.isSelected(modelIndex)) state = ""
             implicitHeight: editor.implicitHeight
             implicitWidth: 100 // for now
+            // a hack because I'm not sure which way to tell TableModel which role to edit
+            // so maybe editRoleProvider should return a role rather than a display string,
+            // then it can be used symmetrically both for data() and getData()
+            property bool hasFormula: formula !== undefined
             states: [
                 State {
                     name: "editing"
-                    PropertyChanges { target: stringText; visible: false }
+                    PropertyChanges { target: stringText; visible: false; text: model.display }
                     PropertyChanges { target: editor; visible: true }
                 }
             ]
@@ -222,8 +226,12 @@ ApplicationWindow {
                 anchors.fill: parent
                 visible: false
                 onEditingFinished: {
-                    model.edit = text
+                    if (hasFormula)
+                        model.formula = text
+                    else
+                        model.edit = text
                     delegate.state = ""
+                    table.forceLayout()
                 }
             }
             TapHandler {
