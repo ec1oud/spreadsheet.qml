@@ -212,7 +212,7 @@ ApplicationWindow {
                     PropertyChanges { target: editor; visible: true }
                 }
             ]
-            Text {
+            Label {
                 x: 2; y: (parent.height - height) / 2
                 id: stringText
                 text: model.display
