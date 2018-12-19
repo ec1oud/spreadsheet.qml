@@ -100,23 +100,73 @@ ApplicationWindow {
     }
 
     function evaluateFormula(f, row) {
+        // for use internally here
+        function cellRangeRef(f, start = 0) {
+            var pat = /([A-Z]+)([0-9]+)..([A-Z]+)([0-9]+)/g
+            pat.lastIndex = start
+            var match = null
+            if (match = pat.exec(f)) {
+                match.unshift(pat.lastIndex)
+                return match
+            }
+            return null
+        }
+        function cellRef(f, start = 0) {
+            var pat = /([A-Z]+)([0-9]+)/g
+            pat.lastIndex = start
+            var match = null
+            if (match = pat.exec(f)) {
+                match.unshift(pat.lastIndex)
+                return match
+            }
+            return null
+        }
+        function rewriteCellRefs(f) {
+            var fRewrite = f;
+            var start = 0;
+            var match = null;
+            while (match = cellRangeRef(f, start)) {
+                var fc1 = match[2].charCodeAt(0) - 65
+                var fr1 = match[3]
+                var fc2 = match[4].charCodeAt(0) - 65
+                var fr2 = match[5]
+                fRewrite = fRewrite.replace(match[1], "range(" + [fc1, fr1, fc2, fr2].join(",") + ")")
+                start = match[0]
+                print(start, f, fc, fr, JSON.stringify(match), fRewrite)
+            }
+            while (match = cellRef(f, start)) {
+                var fc = match[2].charCodeAt(0) - 65
+                var fr = match[3]
+                fRewrite = fRewrite.replace(match[1], "v(" + fc + ", " + fr + ")")
+                // evaluateFormula(table.model.data(table.model.index(fr, fc)), row))
+                start = match[0]
+                //                print(start, f, fc, fr, JSON.stringify(match), fRewrite)
+            }
+            return fRewrite
+        }
+        // for use in cell formulas
         function v(c, r) {
             if (r === undefined)
                 r = row
-            return table.model.data(table.model.index(r, c))
+            return evaluateFormula(table.model.data(table.model.index(r, c)), r)
         }
-        var pat = /([A-Z]+)([0-9]+)/g
-        var match = null;
-        var fRewrite = f;
-        while (match = pat.exec(f)) {
-            var fc = match[ 1 ].charCodeAt(0) - 65;
-            var fr = match[ 2 ];
-            fRewrite = fRewrite.replace(match[0], table.model.data(table.model.index(fr, fc)))
-//            print(pat.lastIndex, f, fc, fr, JSON.stringify(match), fRewrite)
+        function range(c1, r1, c2, r2) {
+            // for now, let's always stay in one column
+            console.assert(c1 === c2)
+            var ret = []
+            var r = 0
+            for (r = r1; r <= r2; ++r)
+                ret.push(v(c1, r))
+            print(c1, r1, r2, ret)
+            return ret
         }
-
-        print(row, f, fRewrite, eval(fRewrite))
-        return eval(fRewrite)
+        function sum(v) {
+            return v.reduce((acc, v) => acc + v)
+        }
+        var rf = rewriteCellRefs(f)
+        var ret = eval(rf)
+        print(row, f, rf, ret)
+        return ret
     }
 
     TableView {
