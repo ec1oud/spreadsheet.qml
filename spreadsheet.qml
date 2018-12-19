@@ -211,18 +211,18 @@ ApplicationWindow {
             Text {
                 x: 2; y: (parent.height - height) / 2
                 id: stringText
-                text: model.formula !== undefined ? evaluateFormula(model.formula, row) : model.display
+                text: model.display
                 width: parent.width - 4
                 elide: Text.ElideRight
                 font.preferShaping: false
             }
             TextField {
                 id: editor
-                text: model.display
+                text: model.edit
                 anchors.fill: parent
                 visible: false
                 onEditingFinished: {
-                    model.display = text
+                    model.edit = text
                     delegate.state = ""
                 }
             }
@@ -261,7 +261,31 @@ ApplicationWindow {
 
     Component {
         id: tableModelFactory
-        TableModel { }
+        TableModel {
+            id: tm
+            displayRoleProvider: function(row, column, v) {
+                var vdata = JSON.parse(v)
+                var ret = v
+                var val = null
+                if (val = vdata["formula"])
+                    ret = evaluateFormula(val, row)
+                else if (val = vdata["date"])
+                    ret = val
+                print("displayRoleProvider", row, column, v, ret)
+                return ret
+            }
+            editRoleProvider: function(row, column, v) {
+                var vdata = JSON.parse(v)
+                var ret = v
+                var val = null
+                if (val = vdata["formula"])
+                    ret = val
+                else if (val = vdata["date"])
+                    ret = val
+                print("editRoleProvider", row, column, v, ret)
+                return ret
+            }
+        }
     }
 
     menuBar: MenuBar {
