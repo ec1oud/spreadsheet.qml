@@ -49,7 +49,7 @@ ApplicationWindow {
         z: 1
         Repeater {
             id: headerRepeater
-            model: table.model.width
+            model: table.model.columnCount
             Rectangle {
                 color: "#88A"
                 width: splitter.x + 6; height: 20
@@ -84,9 +84,9 @@ ApplicationWindow {
         y: table.originY - table.contentY + header.height + table.rowSpacing
         z: 1
         // TableView ought to provide height of each row somehow, in case there is no rowHeightProvider function
-        property real rowHeight: (table.contentHeight - table.rowSpacing * table.model.rowCount() + 2) / table.model.rowCount()
+        property real rowHeight: (table.contentHeight - table.rowSpacing * table.model.rowCount + 2) / table.model.rowCount
         Repeater {
-            model: table.model.height
+            model: table.model.rowCount
             Rectangle {
                 color: "#88A"
                 width: rowLabels.width; height: rowLabels.rowHeight
